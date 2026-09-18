@@ -1,9 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import clauseguardLogo from "./clauseguard-icon.png";
 import { useTheme } from 'next-themes';
 import { Shield, Moon, Sun, UploadCloud, ChevronDown, ChevronUp, CheckCircle, AlertTriangle, XCircle, FileText, RefreshCw, Download, Terminal, WifiOff, Search, Filter } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useMotionTemplate, useTransform, useScroll } from 'framer-motion';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 // --- Types ---
 interface ApiResponse {
@@ -223,9 +227,7 @@ function GlobalHeader({ theme, setTheme, mounted }: { theme: string | undefined,
         
         {/* Left: Logo & Accent Shield */}
         <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-lg bg-slate-900 dark:bg-gradient-to-br dark:from-cyan-500 dark:to-indigo-500 shadow-md">
-            <Shield className="h-5 w-5 text-white" strokeWidth={2.5} />
-          </div>
+          <Image src={clauseguardLogo} alt="ClauseGuard Logo" width={36} height={36} className="rounded-lg object-contain" priority />
           <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             ClauseGuard
           </span>
@@ -412,6 +414,18 @@ export default function Home() {
 
   // Application State
   const [isUploading, setIsUploading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Vectorizing & Auditing Clauses...");
+
+  useEffect(() => {
+    const wakeEngine = async () => {
+      try {
+        await fetch(`${API_BASE_URL}/health`, { method: "GET" });
+      } catch {
+        // Silent catch: Container is either cold and spinning up, or offline
+      }
+    };
+    wakeEngine();
+  }, []);
   const [isComplete, setIsComplete] = useState(false);
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
   const [backendError, setBackendError] = useState<string | null>(null);
@@ -486,15 +500,26 @@ export default function Home() {
     if (!file) return;
     setIsUploading(true);
     setBackendError(null);
+    setLoadingMessage("Vectorizing & Auditing Clauses...");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      setLoadingMessage("Cloud Engine is waking up from standby (Cold Start: ~30s)...");
+    }, 8000);
+    const fetchTimeoutId = setTimeout(() => controller.abort(), 120000);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:8000/api/v1/analyze/", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/analyze/`, {
         method: "POST",
         body: formData,
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+      clearTimeout(fetchTimeoutId);
 
       if (!response.ok) {
         let errorMsg = `Server returned ${response.status}`;
@@ -513,12 +538,14 @@ export default function Home() {
       setApiData(data);
       setIsComplete(true);
     } catch (err: any) {
+      clearTimeout(timeoutId);
+      clearTimeout(fetchTimeoutId);
       console.error("Backend fetch failed:", err);
       setIsUploading(false);
       
       // Handle Network / Connection Refused Errors
-      if (err.message === "Failed to fetch") {
-        setBackendError("Backend offline. Please start the FastAPI server.");
+      if (err.message === "Failed to fetch" || err.name === "AbortError") {
+        setBackendError("Backend offline or timed out. Please check the FastAPI server.");
       } else {
         // Handle Legitimate Backend Rejections (e.g. 422, 500)
         setBackendError(err.message || "An unknown error occurred during analysis.");
@@ -783,7 +810,7 @@ export default function Home() {
                         <div className="absolute inset-0 rounded-full blur-xl bg-slate-400/20 dark:bg-cyan-400/30 animate-pulse"></div>
                       </div>
                       <p className="text-slate-900 dark:text-cyan-400 font-mono text-[13px] uppercase tracking-[0.2em] animate-pulse font-bold text-center px-4">
-                        Vectorizing & Auditing Clauses...
+                        {loadingMessage}
                       </p>
                     </div>
                   </motion.div>

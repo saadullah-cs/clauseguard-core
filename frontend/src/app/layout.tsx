@@ -14,8 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClauseGuard",
-  description: "Contract Risk Inspection",
+  title: "ClauseGuard | Contract Risk Engine",
+  description: "Autonomous tender and contract risk audit platform engineered by Saad Ullah (NexGen Builds).",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/nexgen.ico",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

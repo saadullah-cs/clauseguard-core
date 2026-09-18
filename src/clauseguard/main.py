@@ -28,18 +28,18 @@ async def lifespan(app: FastAPI):
     load_dotenv()
     logger.info("Initializing ClauseGuard Microservices...")
 
-    # 1. Load Classical ML Pipeline
+    # Classical ML Pipeline
     model_dir = Path(__file__).resolve().parent.parent.parent / "models"
     classifier = ClauseRiskClassifier(model_dir=model_dir)
     classifier.load_model()
     app.state.classifier = classifier
 
-    # 2. Load Vector DB
+    # Vector DB
     storage_path = Path(__file__).resolve().parent.parent.parent / "storage" / "chroma"
     vector_store = PolicyVectorStore(storage_path)
     app.state.vector_store = vector_store
 
-    # 3. Initialize LLM Orchestrator
+    # LLM Orchestrator
     audit_engine = ClauseAuditEngine()
     app.state.audit_engine = audit_engine
 
@@ -56,16 +56,21 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
 
-    # Restrict CORS to specific SaaS origins in production
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"], # Next.js local dev
+        allow_origin_regex=r"https?://.*",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
     app.include_router(analyze_router)
+    
+    @app.get("/health", tags=["Telemetry"])
+    async def health_check():
+        """Lightweight readiness probe for cloud monitoring and pre-warming."""
+        return {"status": "operational", "engine": "ClauseGuard Core", "version": "1.0.0"}
+
     return app
 
 app = create_app()

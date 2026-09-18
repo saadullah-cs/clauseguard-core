@@ -19,8 +19,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src ./src
 COPY ./models ./models
-COPY ./storage ./storage 
+
+RUN mkdir -p /app/storage/chroma
+COPY ./storage ./storage
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.clauseguard.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn src.clauseguard.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
