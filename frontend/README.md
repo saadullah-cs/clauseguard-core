@@ -36,3 +36,12 @@ git add README.md frontend/README.md LICENSE
 git commit -m "docs: formalize enterprise documentation architecture and NexGen Builds licensing"
 git push origin main
 ```
+
+---
+
+## 🛡️ License & Authorship
+Designed and engineered by **Saad Ullah**.  
+Proprietary technical architecture. All rights reserved.
+
+> **🛑 PROPRIETARY SOFTWARE:** 
+> This repository is public strictly for portfolio demonstration and technical evaluation. The code, UI/UX design (SCADA HUD), and backend architecture are the exclusive intellectual property of **NexGen Builds**. Copying, cloning, or utilizing this source code for personal or commercial projects is strictly prohibited. See the `LICENSE` file for details.

@@ -45,3 +45,12 @@ docker build -t clauseguard-core .
 # Run containerized service
 docker run -p 8000:8000 --env-file .env clauseguard-core
 ```
+
+---
+
+## 🛡️ License & Authorship
+Designed and engineered by **Saad Ullah**.  
+Proprietary technical architecture. All rights reserved.
+
+> **🛑 PROPRIETARY SOFTWARE:** 
+> This repository is public strictly for portfolio demonstration and technical evaluation. The code, UI/UX design (SCADA HUD), and backend architecture are the exclusive intellectual property of **NexGen Builds**. Copying, cloning, or utilizing this source code for personal or commercial projects is strictly prohibited. See the `LICENSE` file for details.
