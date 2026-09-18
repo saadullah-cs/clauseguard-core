@@ -403,7 +403,16 @@ const SpotlightButton = React.forwardRef<HTMLButtonElement, React.ComponentProps
 });
 SpotlightButton.displayName = "SpotlightButton";
 
-export default function Home() {
+const LOADING_STEPS = [
+  "ESTABLISHING SECURE CONNECTION...",
+  "EXTRACTING TEXT VIA OCR...",
+  "CROSS-REFERENCING STATUTES...",
+  "EVALUATING HIDDEN LIABILITIES...",
+  "DRAFTING COUNTER-PROPOSALS...",
+  "FINALIZING RISK TELEMETRY..."
+];
+
+export default function ClauseGuard() {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   
@@ -414,7 +423,10 @@ export default function Home() {
 
   // Application State
   const [isUploading, setIsUploading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("Vectorizing & Auditing Clauses...");
+  const [loadingMessage, setLoadingMessage] = useState("Establishing secure connection to the ClauseGuard Risk Engine...");
+  const [loadingStep, setLoadingStep] = useState(0);
+
+
 
   useEffect(() => {
     const wakeEngine = async () => {
@@ -430,6 +442,17 @@ export default function Home() {
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
   const [backendError, setBackendError] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isUploading && !isComplete) {
+      setLoadingStep(0);
+      interval = setInterval(() => {
+        setLoadingStep((prev) => Math.min(prev + 1, LOADING_STEPS.length - 1));
+      }, 4500);
+    }
+    return () => clearInterval(interval);
+  }, [isUploading, isComplete]);
 
   // Audit Control State
   const [searchTerm, setSearchTerm] = useState("");
@@ -500,13 +523,13 @@ export default function Home() {
     if (!file) return;
     setIsUploading(true);
     setBackendError(null);
-    setLoadingMessage("Vectorizing & Auditing Clauses...");
+    setLoadingMessage("Establishing secure connection to the ClauseGuard Risk Engine...");
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      setLoadingMessage("Cloud Engine is waking up from standby (Cold Start: ~30s)...");
+      setLoadingMessage("Ingesting document nodes and evaluating legal liabilities. This may take a moment for highly complex agreements...");
     }, 8000);
-    const fetchTimeoutId = setTimeout(() => controller.abort(), 120000);
+    const fetchTimeoutId = setTimeout(() => controller.abort(), 300000);
 
     try {
       const formData = new FormData();
@@ -545,7 +568,7 @@ export default function Home() {
       
       // Handle Network / Connection Refused Errors
       if (err.message === "Failed to fetch" || err.name === "AbortError") {
-        setBackendError("Backend offline or timed out. Please check the FastAPI server.");
+        setBackendError("Network Timeout: The document complexity exceeded the standard processing window. Please refresh and try again.");
       } else {
         // Handle Legitimate Backend Rejections (e.g. 422, 500)
         setBackendError(err.message || "An unknown error occurred during analysis.");
@@ -809,9 +832,20 @@ export default function Home() {
                         </svg>
                         <div className="absolute inset-0 rounded-full blur-xl bg-slate-400/20 dark:bg-cyan-400/30 animate-pulse"></div>
                       </div>
-                      <p className="text-slate-900 dark:text-cyan-400 font-mono text-[13px] uppercase tracking-[0.2em] animate-pulse font-bold text-center px-4">
-                        {loadingMessage}
-                      </p>
+                      <div className="w-full max-w-[260px] mx-auto min-h-[40px] flex items-center justify-center mt-4 overflow-visible">
+                        <AnimatePresence mode="wait">
+                          <motion.p
+                            key={loadingStep}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -5 }}
+                            transition={{ duration: 0.3 }}
+                            className="text-[10px] text-cyan-400 font-mono tracking-widest text-center uppercase leading-snug"
+                          >
+                            {LOADING_STEPS[loadingStep]}
+                          </motion.p>
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </motion.div>
                 ) : (
